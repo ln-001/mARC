@@ -22,7 +22,7 @@ struct ContentView: View {
     
     var body: some View {
         NavigationSplitView {
-            sidebarView
+            SidebarView(irc: irc, refreshCounter: refreshCounter)
         } detail: {
             detailView
         }
@@ -32,59 +32,37 @@ struct ContentView: View {
         .frame(minWidth: 700, minHeight: 400)
     }
     
-    
-    var sidebarView: some View {
-        let _ = refreshCounter // Force refresh
-        
-        return List {
-            Section("Server") {
-                Button {
-                    irc.selectChannel(nil)
-                } label: {
-                    Label("Status", systemImage: "server.rack")
-                }
-                .buttonStyle(.plain)
-                .listRowBackground(irc.activeChannel == nil ? Color.accentColor.opacity(0.3) : Color.clear)
-            }
-            
-            Section("Channels") {
-                ForEach(irc.channels) { channel in
-                    Button {
-                        irc.selectChannel(channel)
-                    } label: {
-                        HStack {
-                            Label(channel.name, systemImage: channel.name.hasPrefix("#") ? "number" : "person")
-                            Spacer()
-                            if channel.unreadCount > 0 {
-                                Text("\(channel.unreadCount)")
-                                    .font(.caption)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.red)
-                                    .foregroundStyle(.white)
-                                    .clipShape(Capsule())
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .listRowBackground(irc.activeChannel == channel ? Color.accentColor.opacity(0.3) : Color.clear)
-                }
-            }
-        }
-        .listStyle(.sidebar)
-        .frame(minWidth: 150)
-    }
-    
-    
     var detailView: some View {
         HStack(spacing: 0) {
             VStack(spacing: 0) {
-                connectionBar
-                topicBar
+                ConnectionBar(
+                    irc: irc,
+                    host: $host,
+                    port: $port,
+                    useSSL: $useSSL,
+                    nickname: $nickname,
+                    onConnect: connect
+                )
+                
+                if let channel = irc.activeChannel, !channel.topic.isEmpty {
+                    TopicBar(topic: channel.topic)
+                }
+                
                 Divider()
-                messagesView
+                
+                MessagesView(
+                    messages: currentMessages,
+                    myNick: irc.nickname,
+                    refreshCounter: refreshCounter
+                )
+                
                 Divider()
-                inputBar
+                
+                InputBar(
+                    inputText: $inputText,
+                    isConnected: irc.isConnected,
+                    onSend: sendInput
+                )
             }
             
             if let channel = irc.activeChannel {
@@ -96,124 +74,13 @@ struct ContentView: View {
         }
     }
     
-    
-    var connectionBar: some View {
-        HStack {
-            Circle()
-                .fill(statusColor)
-                .frame(width: 10, height: 10)
-            
-            TextField("Host", text: $host)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 150)
-            
-            TextField("Port", text: $port)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 60)
-            
-            Toggle("SSL", isOn: $useSSL)
-            
-            TextField("Nickname", text: $nickname)
-                .textFieldStyle(.roundedBorder)
-                .frame(width: 120)
-            
-            Spacer()
-            
-            connectionButton
-        }
-        .padding(8)
-    }
-    
-    @ViewBuilder
-    var connectionButton: some View {
-        if irc.isConnected {
-            Button("Disconnect") {
-                irc.disconnect()
-            }
-        } else if irc.isConnecting {
-            Button("Cancel") {
-                irc.disconnect()
-            }
-        } else {
-            Button("Connect") {
-                connect()
-            }
-        }
-    }
-    
-    var statusColor: Color {
-        if irc.isConnected { return .green }
-        if irc.isConnecting { return .yellow }
-        return .red
-    }
-    
-    
-    @ViewBuilder
-    var topicBar: some View {
-        if let channel = irc.activeChannel, !channel.topic.isEmpty {
-            HStack {
-                Image(systemName: "text.quote")
-                    .foregroundStyle(.secondary)
-                Text(channel.topic)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                Spacer()
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.secondary.opacity(0.1))
-        }
-    }
-    
-    
-    var messagesView: some View {
-        let _ = refreshCounter // Force refresh
-        
-        return ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(currentMessages) { msg in
-                        MessageView(msg: msg, myNick: irc.nickname)
-                            .id(msg.id)
-                    }
-                }
-                .padding(8)
-            }
-            .onChange(of: currentMessages.count) { _ in
-                if let last = currentMessages.last {
-                    proxy.scrollTo(last.id, anchor: .bottom)
-                }
-            }
-        }
-    }
-    
     var currentMessages: [IRCMessage] {
         if let channel = irc.activeChannel {
             return channel.messages
         }
         return irc.messages
     }
-    
-    
-    var inputBar: some View {
-        HStack {
-            TextField("Enter message or /command", text: $inputText)
-                .textFieldStyle(.plain)
-                .font(.system(.body, design: .monospaced))
-                .onSubmit {
-                    sendInput()
-                }
-                .disabled(!irc.isConnected)
-            
-            Button("Send") {
-                sendInput()
-            }
-            .disabled(!irc.isConnected || inputText.isEmpty)
-        }
-        .padding(8)
-    }
-    
-    
+        
     func connect() {
         guard let portNum = UInt16(port) else { return }
         irc.connect(host: host, port: portNum, useSSL: useSSL, nickname: nickname)
