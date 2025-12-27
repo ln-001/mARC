@@ -92,7 +92,7 @@ class IRCClient: ObservableObject {
             }
             
             if error == nil && !isComplete {
-                self?.startReceiving()  // Keep receiving
+                self?.startReceiving()
             }
         }
     }
@@ -100,7 +100,7 @@ class IRCClient: ObservableObject {
     private func handleReceivedData(_ data: Data) {
         buffer.append(data)
         
-        while let lineEnd = buffer.firstIndex(of: 0x0A) {  // \n
+        while let lineEnd = buffer.firstIndex(of: 0x0A) {
             var lineData = buffer[..<lineEnd]
             buffer = Data(buffer[buffer.index(after: lineEnd)...])
             
@@ -117,7 +117,7 @@ class IRCClient: ObservableObject {
     func sendRaw(_ message: String) {
         guard isConnected else { return }
         
-        print(">>> \(message)")  // Debug output
+        print(">>> \(message)")
         let data = (message + "\r\n").data(using: .utf8)!
         
         connection?.send(content: data, completion: .contentProcessed { error in
@@ -132,6 +132,8 @@ class IRCClient: ObservableObject {
         connection = nil
         isConnecting = false
         isConnected = false
+        messages.removeAll()
+        selectChannel(nil)
     }
     
     func register() {
@@ -316,7 +318,6 @@ class IRCClient: ObservableObject {
                                 }
                             }
                         default:
-                            // Other modes might consume a parameter
                             break
                         }
                     }
@@ -325,14 +326,12 @@ class IRCClient: ObservableObject {
                 messages.append(msg)
             }
         case "KICK":
-            // params: [channel, kicked_nick, reason]
             guard msg.params.count >= 2 else { return }
             let channelName = msg.params[0]
             let kickedNick = msg.params[1]
             let reason = msg.params.count > 2 ? msg.params[2] : "No reason"
             
             if kickedNick == nickname {
-                // We got kicked
                 if let channel = findChannel(channelName) {
                     channel.messages.append(msg)
                 }

@@ -26,7 +26,6 @@ struct MessageView: View {
     var content: some View {
         switch msg.command {
         case "PRIVMSG":
-            //Regular message: <nick> message
             let nick = msg.nick ?? "???"
             let text = msg.params.last ?? ""
             
