@@ -1,65 +1,136 @@
-# Created by https://gitignore.org
-# Swift.gitignore
+# mARC
 
-# Xcode
-#
-# gitignore contributors: remember to update Global/Xcode.gitignore, Objective-C.gitignore & Swift.gitignore
+A native macOS IRC client built with Swift and SwiftUI, inspired by the classic mIRC for Windows.
 
-## User settings
-xcuserdata/
+![macOS](https://img.shields.io/badge/macOS-13.0%2B-blue)
+![Swift](https://img.shields.io/badge/Swift-5.9-orange)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## Obj-C/Swift specific
-*.hmap
+## Features
 
-## App packaging
-*.ipa
-*.dSYM.zip
-*.dSYM
+- **Native macOS app** — Built with SwiftUI for a modern, native experience
+- **SSL/TLS support** — Secure connections on port 6697
+- **Multiple channels** — Join and manage multiple channels simultaneously
+- **Private messaging** — Double-click a user to open a DM
+- **User list** — See who's in each channel with op (@) and voice (+) status
+- **Topic display** — Channel topics shown at the top
+- **Unread indicators** — Badge shows unread message count per channel
+- **Nick and mode tracking** — Real-time updates when users change nicks or get op/voice
 
-## Playgrounds
-timeline.xctimeline
-playground.xcworkspace
+## Screenshots
 
-# Swift Package Manager
-#
-# Add this line if you want to avoid checking in source code from Swift Package Manager dependencies.
-# Packages/
-# Package.pins
-# Package.resolved
-*.xcodeproj
-#
-# Xcode automatically generates this directory with a .xcworkspacedata file and xcuserdata
-# hence it is not needed unless you have added a package configuration file to your project
-.swiftpm
+*Coming soon*
 
-.build/
+## Installation
 
-# CocoaPods
-#
-# We recommend against adding the Pods directory to your .gitignore. However
-# you should judge for yourself, the pros and cons are mentioned at:
-# https://guides.cocoapods.org/using/using-cocoapods.html#should-i-check-the-pods-directory-into-source-control
-#
-# Pods/
-#
-# Add this line if you want to avoid checking in source code from the Xcode workspace
-*.xcworkspace
+### Requirements
+- macOS 13.0 or later
+- Xcode 15.0 or later
 
-# Carthage
-#
-# Add this line if you want to avoid checking in source code from Carthage dependencies.
-# Carthage/Checkouts
+### Building from Source
 
-Carthage/Build/
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/mARC.git
+   cd mARC
+   ```
 
-# fastlane
-#
-# It is recommended to not store the screenshots in the git repo.
-# Instead, use fastlane to re-generate the screenshots whenever they are needed.
-# For more information about the recommended setup visit:
-# https://docs.fastlane.tools/best-practices/source-control/#source-control
+2. Open the project in Xcode:
+   ```bash
+   open mARC.xcodeproj
+   ```
 
-fastlane/report.xml
-fastlane/Preview.html
-fastlane/screenshots/**/*.png
-fastlane/test_output
+3. Build and run (⌘R)
+
+## Usage
+
+### Connecting
+
+1. Enter the server hostname (e.g., `irc.libera.chat`)
+2. Enter the port (`6667` for plain, `6697` for SSL)
+3. Toggle SSL if using a secure connection
+4. Enter your desired nickname
+5. Click **Connect**
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/join #channel` | Join a channel |
+| `/j #channel` | Join a channel (shortcut) |
+| `/part` | Leave current channel |
+| `/part #channel` | Leave specified channel |
+| `/quit [message]` | Disconnect from server |
+| `/msg nick message` | Send private message |
+| `/me action` | Send action message |
+| `/nick newnick` | Change your nickname |
+| `/topic` | View channel topic |
+| `/topic new topic` | Set channel topic (requires op) |
+| `/mode +o nick` | Give op status (requires op) |
+| `/mode +v nick` | Give voice status (requires op) |
+| `/kick nick [reason]` | Kick user from channel (requires op) |
+| `/raw command` | Send raw IRC command |
+
+### Keyboard Shortcuts
+
+- **Enter** — Send message
+- **Click channel** — Switch to channel
+- **Double-click user** — Open private message
+
+## Project Structure
+
+```
+mARC/
+├── mARCApp.swift        # App entry point
+├── ContentView.swift    # Main UI
+├── IRCClient.swift      # IRC protocol & networking
+├── IRCMessage.swift     # Message model & parser
+├── Channel.swift        # Channel model
+├── MessageView.swift    # Message display component
+└── UserListView.swift   # User list component
+```
+
+## IRC Networks
+
+Some popular networks to try:
+
+| Network | Server | SSL Port |
+|---------|--------|----------|
+| Libera.Chat | irc.libera.chat | 6697 |
+| OFTC | irc.oftc.net | 6697 |
+| EFNet | irc.efnet.org | 6697 |
+| IRCnet | open.ircnet.net | 6697 |
+
+## Roadmap
+
+- [ ] SASL authentication
+- [ ] Nick highlighting/mentions
+- [ ] Auto-reconnect
+- [ ] DCC file transfers
+
+## Privacy Note
+
+By default, IRC servers expose your IP address or hostname to other users. To protect your privacy:
+
+1. **Use a VPN** — Easiest solution
+2. **Register your nick** — Some networks (like Libera.Chat) provide hostname cloaking for registered users
+3. **Use SASL** — Authenticate before joining channels (coming soon)
+
+## Contributing
+
+Contributions are welcome! Feel free to:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Inspired by [mIRC](https://www.mirc.com/), the classic Windows IRC client
+- Built with [SwiftUI](https://developer.apple.com/xcode/swiftui/) and Apple's [Network framework](https://developer.apple.com/documentation/network)
