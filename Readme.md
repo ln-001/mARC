@@ -106,7 +106,6 @@ Some popular networks to try:
 - [ ] SASL authentication
 - [ ] Nick highlighting/mentions
 - [ ] Auto-reconnect
-- [ ] DCC file transfers
 
 ## Privacy Note
 
