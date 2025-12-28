@@ -13,6 +13,8 @@ struct ConnectionBar: View {
     @Binding var port: String
     @Binding var useSSL: Bool
     @Binding var nickname: String
+    @Binding var saslUsername: String
+    @Binding var saslPassword: String
     var onConnect: () -> Void
     
     var body: some View {
@@ -33,7 +35,15 @@ struct ConnectionBar: View {
             
             TextField("Nickname", text: $nickname)
                 .textFieldStyle(.roundedBorder)
-                .frame(width: 120)
+                .frame(width: 100)
+            
+            TextField("SASL User", text: $saslUsername)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 80)
+            
+            SecureField("Password", text: $saslPassword)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 80)
             
             Spacer()
             

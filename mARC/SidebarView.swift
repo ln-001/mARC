@@ -2,7 +2,7 @@
 //  SidebarView.swift
 //  mARC
 //
-//  Created by Luís Nobre on 27/12/2025.
+//  Created by LN on 27/12/2025.
 //
 
 import SwiftUI
@@ -31,7 +31,7 @@ struct SidebarView: View {
                         irc.selectChannel(channel)
                     } label: {
                         HStack {
-                            Label(channel.name, systemImage: channel.name.hasPrefix("#") ? "number" : "person")
+                            Label(channel.name.replacingOccurrences(of: "#", with: ""), systemImage: channel.name.hasPrefix("#") ? "number" : "person")
                             Spacer()
                             if channel.unreadCount > 0 {
                                 Text("\(channel.unreadCount)")

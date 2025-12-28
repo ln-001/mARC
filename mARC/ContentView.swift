@@ -15,6 +15,9 @@ struct ContentView: View {
     @AppStorage("port")  private var port = ""
     @AppStorage("useSSL")  private var useSSL = false
     @AppStorage("nickname")  private var nickname = ""
+    @AppStorage("saslUsername") private var saslUsername = ""
+    @State private var saslPassword = ""
+  
     
     @State private var inputText = ""
     
@@ -41,6 +44,8 @@ struct ContentView: View {
                     port: $port,
                     useSSL: $useSSL,
                     nickname: $nickname,
+                    saslUsername: $saslUsername,
+                    saslPassword: $saslPassword,
                     onConnect: connect
                 )
                 
@@ -83,9 +88,13 @@ struct ContentView: View {
         
     func connect() {
         guard let portNum = UInt16(port) else { return }
-        irc.connect(host: host, port: portNum, useSSL: useSSL, nickname: nickname)
+        
+        self.nickname = nickname.trimmingCharacters(in: .whitespaces)
+        self.saslPassword = saslPassword
+            self.saslUsername = saslUsername.trimmingCharacters(in: .whitespaces)
+        
+        irc.connect(host: host, port: portNum, useSSL: useSSL, nickname: nickname, saslUsername: saslUsername, saslPassword: saslPassword)
     }
-    
     func sendInput() {
         guard !inputText.isEmpty else { return }
         
