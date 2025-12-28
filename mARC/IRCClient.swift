@@ -411,5 +411,15 @@ class IRCClient: ObservableObject {
         activeChannel = channel
         channel?.unreadCount = 0
     }
+    func partChannel(_ name: String) {
+        sendRaw("PART \(name)")
+    }
+
+    func closePrivateMessage(_ channel: Channel) {
+        channels.removeAll { $0.id == channel.id }
+        if activeChannel?.id == channel.id {
+            activeChannel = channels.first
+        }
+    }
     
 }

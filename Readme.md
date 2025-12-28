@@ -103,7 +103,6 @@ Some popular networks to try:
 
 ## Roadmap
 
-- [ ] SASL authentication
 - [ ] Nick highlighting/mentions
 - [ ] Auto-reconnect
 
