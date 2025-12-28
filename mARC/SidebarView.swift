@@ -46,6 +46,17 @@ struct SidebarView: View {
                     }
                     .buttonStyle(.plain)
                     .listRowBackground(irc.activeChannel == channel ? Color.accentColor.opacity(0.3) : Color.clear)
+                    .contextMenu{
+                        if channel.name.hasPrefix("#") || channel.name.hasPrefix("&"){
+                            Button("Leave Channel"){
+                                irc.partChannel(channel.name)
+                            }
+                        }else{
+                            Button("Close"){
+                                irc.closePrivateMessage(channel)
+                            }
+                        }
+                    }
                 }
             }
         }
