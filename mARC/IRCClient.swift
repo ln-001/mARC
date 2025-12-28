@@ -18,15 +18,22 @@ class IRCClient: ObservableObject {
     @Published var nickname = ""
     @Published var channels: [Channel] = []
     @Published var activeChannel: Channel?
+    @Published var saslUsername: String = ""
+    @Published var saslPassword: String = ""
+    
+    var useSASL: Bool { !saslUsername.isEmpty && !saslPassword.isEmpty }
 
     
     private var connection: NWConnection?
     private var buffer = Data()
     
-    func connect(host: String, port: UInt16, useSSL: Bool = false, nickname: String) {
+    func connect(host: String, port: UInt16, useSSL: Bool = false, nickname: String, saslUsername: String, saslPassword: String) {
         guard !isConnecting && !isConnected else { return }
         
         self.nickname = nickname
+        self.saslPassword = saslPassword
+        self.saslUsername = saslUsername
+        
         isConnecting = true
         let msg = parseIRCMessage("Connecting to \(host):\(port)...")
         messages.append(msg)
@@ -92,7 +99,7 @@ class IRCClient: ObservableObject {
             }
             
             if error == nil && !isComplete {
-                self?.startReceiving()  // Keep receiving
+                self?.startReceiving()
             }
         }
     }
@@ -100,7 +107,7 @@ class IRCClient: ObservableObject {
     private func handleReceivedData(_ data: Data) {
         buffer.append(data)
         
-        while let lineEnd = buffer.firstIndex(of: 0x0A) {  // \n
+        while let lineEnd = buffer.firstIndex(of: 0x0A) {
             var lineData = buffer[..<lineEnd]
             buffer = Data(buffer[buffer.index(after: lineEnd)...])
             
@@ -117,7 +124,7 @@ class IRCClient: ObservableObject {
     func sendRaw(_ message: String) {
         guard isConnected else { return }
         
-        print(">>> \(message)")  // Debug output
+        print(">>> \(message)")
         let data = (message + "\r\n").data(using: .utf8)!
         
         connection?.send(content: data, completion: .contentProcessed { error in
@@ -132,11 +139,18 @@ class IRCClient: ObservableObject {
         connection = nil
         isConnecting = false
         isConnected = false
+        messages.removeAll()
+        channels.removeAll()
+        selectChannel(nil)
     }
     
     func register() {
-        sendRaw("NICK \(nickname)")
-        sendRaw("User \(nickname) 0 * :mARC User")
+            if useSASL {
+                sendRaw("CAP REQ :sasl")
+            } else {
+                sendRaw("NICK \(nickname)")
+                sendRaw("USER \(nickname) 0 * :mARC User")
+            }
     }
     
     private func handleLine(_ line: String){
@@ -161,18 +175,19 @@ class IRCClient: ObservableObject {
     private func routeMessage(_ msg: IRCMessage) {
         switch msg.command {
         case "JOIN":
-            let channelName = msg.params.first ?? ""
-            if msg.nick == nickname {
-                let channel = Channel(name: channelName)
-                channel.messages.append(msg)
-                channels.append(channel)
-                activeChannel = channel
-            }else if let channel = findChannel(channelName){
-                channel.messages.append(msg)
-                if let nick = msg.nick, !channel.users.contains(ChannelUser(nick: nick)){
-                    channel.users.append(ChannelUser(nick: nick))
-                }
-            }
+
+                    let channelName = msg.params.first ?? ""
+                    if msg.nick == nickname {
+                        let channel = Channel(name: channelName)
+                        channel.messages.append(msg)
+                        channels.append(channel)
+                        activeChannel = channel
+                    }else if let channel = findChannel(channelName){
+                        channel.messages.append(msg)
+                        if let nick = msg.nick, !channel.users.contains(ChannelUser(nick: nick)){
+                            channel.users.append(ChannelUser(nick: nick))
+                        }
+                    }
         case "PART":
             let channelName = msg.params.first ?? ""
             if msg.nick == nickname {
@@ -283,9 +298,7 @@ class IRCClient: ObservableObject {
             }
             
             let target = msg.params[0]
-            
-            // Only handle channel modes
-            if target.hasPrefix("#") || target.hasPrefix("&") {
+                        if target.hasPrefix("#") || target.hasPrefix("&") {
                 if let channel = findChannel(target) {
                     channel.messages.append(msg)
                     
@@ -316,7 +329,6 @@ class IRCClient: ObservableObject {
                                 }
                             }
                         default:
-                            // Other modes might consume a parameter
                             break
                         }
                     }
@@ -325,14 +337,12 @@ class IRCClient: ObservableObject {
                 messages.append(msg)
             }
         case "KICK":
-            // params: [channel, kicked_nick, reason]
             guard msg.params.count >= 2 else { return }
             let channelName = msg.params[0]
             let kickedNick = msg.params[1]
             let reason = msg.params.count > 2 ? msg.params[2] : "No reason"
             
             if kickedNick == nickname {
-                // We got kicked
                 if let channel = findChannel(channelName) {
                     channel.messages.append(msg)
                 }
@@ -345,6 +355,39 @@ class IRCClient: ObservableObject {
                 channel.messages.append(msg)
                 channel.users.removeAll { $0.nick == kickedNick }
             }
+        case "CAP":
+            if msg.raw.lowercased().contains("ack") && msg.raw.lowercased().contains("sasl") {
+                addSystemMessage("SASL supported, authenticating...")
+                sendRaw("AUTHENTICATE PLAIN")
+            } else if msg.raw.lowercased().contains("nak") {
+                addSystemMessage("SASL not supported by server")
+                sendRaw("CAP END")
+                sendRaw("NICK \(nickname)")
+                sendRaw("USER \(nickname) 0 * :mARC User")
+            }
+
+        case "AUTHENTICATE":
+            if msg.params.first == "+" {
+                let authString = "\(saslUsername)\u{0}\(saslUsername)\u{0}\(saslPassword)"
+                let base64 = Data(authString.utf8).base64EncodedString()
+                sendRaw("AUTHENTICATE \(base64)")
+            }
+
+        case "903":
+            addSystemMessage("SASL authentication successful!")
+            sendRaw("CAP END")
+            sendRaw("NICK \(nickname)")
+            sendRaw("USER \(nickname) 0 * :mARC User")
+
+        case "904", "905":
+            addSystemMessage("SASL authentication failed - continuing without authentication")
+            sendRaw("CAP END")
+            sendRaw("NICK \(nickname)")
+            sendRaw("USER \(nickname) 0 * :mARC User")
+        case "451":
+            addSystemMessage("Server doesn't support SASL, continuing normally")
+            sendRaw("NICK \(nickname)")
+            sendRaw("USER \(nickname) 0 * :mARC User")
         default:
             messages.append(msg)
             
@@ -368,4 +411,5 @@ class IRCClient: ObservableObject {
         activeChannel = channel
         channel?.unreadCount = 0
     }
+    
 }
