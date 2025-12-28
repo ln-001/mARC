@@ -11,10 +11,10 @@ import Combine
 struct ContentView: View {
     @StateObject private var irc = IRCClient()
     
-    @State private var host = "127.0.0.1"
-    @State private var port = "6667"
-    @State private var useSSL = false
-    @State private var nickname = "mIRCmac"
+    @AppStorage("host") private var host = ""
+    @AppStorage("port")  private var port = ""
+    @AppStorage("useSSL")  private var useSSL = false
+    @AppStorage("nickname")  private var nickname = ""
     
     @State private var inputText = ""
     
