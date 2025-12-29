@@ -18,8 +18,8 @@ A native macOS IRC client built with Swift and SwiftUI, inspired by the classic 
 - **Nick and mode tracking** — Real-time updates when users change nicks or get op/voice
 
 ## Screenshots
-
-*Coming soon*
+<img width="2102" height="1197" alt="Scherm­afbeelding 2025-12-29 om 19 37 08" src="https://github.com/user-attachments/assets/ade73ebf-da25-49af-ba33-61bbedf9c38d" />
+<img width="2102" height="1197" alt="Scherm­afbeelding 2025-12-29 om 19 37 08" src="https://github.com/user-attachments/assets/602d0934-108a-45d3-ab4a-80587ebd6129" />
 
 ## Installation
 
